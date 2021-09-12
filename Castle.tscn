@@ -1,0 +1,139 @@
+[gd_scene load_steps=19 format=2]
+
+[ext_resource path="res://assets/castle/export_mesh.mesh" type="ArrayMesh" id=1]
+[ext_resource path="res://materials/castle_shadermaterial.tres" type="Material" id=2]
+
+[sub_resource type="Animation" id=1]
+resource_name = "build"
+length = 3.0
+tracks/0/type = "value"
+tracks/0/path = NodePath("MeshInstance:material_override:shader_param/current_frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 3 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 0.0, 72.0 ]
+}
+
+[sub_resource type="Animation" id=2]
+resource_name = "hidden"
+length = 0.1
+tracks/0/type = "value"
+tracks/0/path = NodePath("MeshInstance:material_override:shader_param/current_frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ 0.0 ]
+}
+
+[sub_resource type="Animation" id=3]
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("MeshInstance:material_override:shader_param/current_frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 72.0, 96.0 ]
+}
+
+[sub_resource type="Animation" id=4]
+resource_name = "sell"
+length = 3.0
+tracks/0/type = "value"
+tracks/0/path = NodePath("MeshInstance:material_override:shader_param/current_frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 3 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 72.0, 0.0 ]
+}
+
+[sub_resource type="AnimationNodeAnimation" id=5]
+animation = "build"
+
+[sub_resource type="AnimationNodeAnimation" id=6]
+animation = "hidden"
+
+[sub_resource type="AnimationNodeAnimation" id=7]
+animation = "idle"
+
+[sub_resource type="AnimationNodeAnimation" id=8]
+animation = "sell"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id=9]
+switch_mode = 2
+auto_advance = true
+
+[sub_resource type="AnimationNodeStateMachineTransition" id=10]
+
+[sub_resource type="AnimationNodeStateMachineTransition" id=11]
+switch_mode = 2
+auto_advance = true
+
+[sub_resource type="AnimationNodeStateMachineTransition" id=12]
+
+[sub_resource type="AnimationNodeStateMachine" id=13]
+states/build/node = SubResource( 5 )
+states/build/position = Vector2( 101.4, 73.4 )
+states/hidden/node = SubResource( 6 )
+states/hidden/position = Vector2( 101.72, 164.44 )
+states/idle/node = SubResource( 7 )
+states/idle/position = Vector2( 262.2, 71.8 )
+states/sell/node = SubResource( 8 )
+states/sell/position = Vector2( 262.68, 164.632 )
+transitions = [ "build", "idle", SubResource( 9 ), "idle", "sell", SubResource( 10 ), "sell", "hidden", SubResource( 11 ), "hidden", "build", SubResource( 12 ) ]
+
+[sub_resource type="AnimationNodeStateMachinePlayback" id=14]
+
+[sub_resource type="PlaneMesh" id=15]
+size = Vector2( 6, 6 )
+
+[sub_resource type="SpatialMaterial" id=16]
+albedo_color = Color( 0.345098, 0.890196, 0.27451, 1 )
+
+[node name="Castle" type="Spatial"]
+
+[node name="MeshInstance" type="MeshInstance" parent="."]
+material_override = ExtResource( 2 )
+mesh = ExtResource( 1 )
+material/0 = null
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+anims/build = SubResource( 1 )
+anims/hidden = SubResource( 2 )
+anims/idle = SubResource( 3 )
+anims/sell = SubResource( 4 )
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = SubResource( 13 )
+anim_player = NodePath("../AnimationPlayer")
+active = true
+parameters/playback = SubResource( 14 )
+
+[node name="Ground" type="MeshInstance" parent="."]
+visible = false
+mesh = SubResource( 15 )
+material/0 = SubResource( 16 )
+
+[node name="DirectionalLight" type="DirectionalLight" parent="."]
+transform = Transform( 0.464996, -0.639153, 0.612586, -0.0529327, 0.670634, 0.739898, -0.883729, -0.376475, 0.27801, 11.5329, 17.2916, 0 )
+shadow_enabled = true
+shadow_contact = 0.4

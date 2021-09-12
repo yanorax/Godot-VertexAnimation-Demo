@@ -1,0 +1,212 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=2]
+
+[ext_resource path="res://assets/iceshard/normals.png" type="Texture" id=1]
+[ext_resource path="res://assets/iceshard/offsets.exr" type="Texture" id=2]
+[ext_resource path="res://assets/iceshard/albedo.png" type="Texture" id=3]
+
+[sub_resource type="Shader" id=1]
+code = "//Spatial Ice Shader - https://godotshaders.com/shader/spatial-ice-shader/
+
+shader_type spatial;
+render_mode depth_draw_alpha_prepass, specular_schlick_ggx, unshaded;
+
+uniform sampler2D offset_map;
+uniform sampler2D normal_map;
+uniform sampler2D texture_albedo: hint_albedo;
+uniform float start_frame = 0;
+uniform float end_frame = 14;
+
+uniform float FresnelPower = 2.5;
+uniform vec4 FresnelColor : hint_color;
+uniform vec4 Color : hint_color;
+uniform vec3 Tiling = vec3(1.0, 1.0, 0.0);
+uniform vec3 Offset = vec3(0.0, 0.0, 0.0);
+uniform sampler2D Ice_Texture : hint_albedo;
+uniform float RefractionAmount = 1.0;
+uniform float Metallic = 0.134;
+uniform float Smoothness = 0.627;
+uniform float Normals = 0.77;
+
+
+// TilingAndOffsetUV
+
+vec2 ti1ingN0ffsetFunc(vec2 _uv_tN0, vec2 _offset_tN0){
+	return vec2(mod(_uv_tN0.x + _offset_tN0.x, 1.0), mod(_uv_tN0.y + _offset_tN0.y, 1.0));
+}
+
+// ReadNormalMap
+
+// Pulled straight from Godot's scene.glsl file
+vec3 read_normalmap(in vec3 normalmap, in vec3 normal, in vec3 tangent, in vec3 binormal, in float normaldepth) {
+	normalmap.xy = normalmap.xy * 2.0 - 1.0;
+	normalmap.z = sqrt(max(0.0, 1.0 - dot(normalmap.xy, normalmap.xy))); //always ignore Z, as it can be RG packed, Z may be pos/neg, etc.
+	
+	return normalize(mix(normal, tangent * normalmap.x + binormal * normalmap.y + normal * normalmap.z, normaldepth));
+}
+
+void vertex() {
+	
+	float num_frames = end_frame - start_frame;
+	float current_frame = start_frame + (num_frames * COLOR.a);
+	
+	ivec2 tex_size = textureSize(offset_map, 0);
+	float pixel_size = 1.0 / float(tex_size.y);
+	float frame_floor = clamp(floor(current_frame), start_frame, end_frame);
+	float frame_ceil = clamp(ceil(current_frame), start_frame, end_frame);
+	
+	vec2 frame_floor_uv_offset = vec2(0.0, -((frame_floor + 0.5) * pixel_size));
+	vec2 frame_ceil_uv_offset = vec2(0.0, -((frame_ceil + 0.5) * pixel_size));
+	
+	float lerp_factor = current_frame - frame_floor;
+	
+	vec3 offset_floor = texture(offset_map, UV2 + frame_floor_uv_offset).xyz;
+	vec3 offset_ceil = texture(offset_map, UV2 + frame_ceil_uv_offset).xyz;
+	vec3 offset_lerp = mix(offset_floor, offset_ceil, lerp_factor);
+	vec3 new_offset = vec3(offset_lerp.x, offset_lerp.z, offset_lerp.y);
+	
+	VERTEX += new_offset;
+	
+	vec3 normal_floor = texture(normal_map, UV2 + frame_floor_uv_offset).xyz;
+	vec3 normal_ceil = texture(normal_map, UV2 + frame_ceil_uv_offset).xyz;
+	vec3 normal_lerp = mix(normal_floor, normal_ceil, lerp_factor);
+	vec3 new_normal = vec3((normal_lerp.x * 2.0) - 1.0, (normal_lerp.z * 2.0) - 1.0, (normal_lerp.y * 2.0) - 1.0);
+	
+	NORMAL = new_normal;
+}
+
+void fragment() {
+// ScalarUniform:23
+	float n_out23p0 = FresnelPower;
+
+// Fresnel:22
+	float n_out22p0 = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), n_out23p0);
+
+// ColorUniform:24
+	vec3 n_out24p0 = FresnelColor.rgb;
+	float n_out24p1 = FresnelColor.a;
+
+// VectorOp:25
+	vec3 n_out25p0 = vec3(n_out22p0) * vec3(n_out24p0);
+
+// ColorUniform:5
+	vec3 n_out5p0 = Color.rgb;
+	float n_out5p1 = Color.a;
+
+// Input:29
+	vec3 n_out29p0 = vec3(UV, 0.0);
+
+// VectorUniform:31
+	vec3 n_out31p0 = Tiling;
+
+// VectorOp:30
+	vec3 n_out30p0 = n_out29p0 * n_out31p0;
+
+// VectorUniform:28
+	vec3 n_out28p0 = Offset;
+
+// TilingAndOffsetUV:27
+	vec3 n_out27p0;
+	{
+		n_out27p0 = vec3(ti1ingN0ffsetFunc(n_out30p0.xy, n_out28p0.xy), 0);
+	}
+
+// Texture:11
+	vec3 n_out11p0;
+	float n_out11p1;
+	{
+		vec4 Ice_Texture_tex_read = texture(Ice_Texture, n_out27p0.xy);
+		n_out11p0 = Ice_Texture_tex_read.rgb;
+		n_out11p1 = Ice_Texture_tex_read.a;
+	}
+
+// Input:9
+	vec3 n_out9p0 = vec3(SCREEN_UV, 0.0);
+
+// VectorDecompose:12
+	float n_out12p0 = n_out11p0.x;
+	float n_out12p1 = n_out11p0.y;
+	float n_out12p2 = n_out11p0.z;
+
+// ScalarOp:10
+	float n_out10p0 = dot(n_out9p0, vec3(0.333333, 0.333333, 0.333333)) * n_out12p0;
+
+// ScalarOp:17
+	float n_out17p0 = dot(n_out9p0, vec3(0.333333, 0.333333, 0.333333)) + n_out10p0;
+
+// VectorOp:13
+	vec3 n_out13p0 = n_out9p0 - vec3(n_out17p0);
+
+// ScalarUniform:16
+	float n_out16p0 = RefractionAmount;
+
+// VectorOp:14
+	vec3 n_out14p0 = n_out13p0 * vec3(n_out16p0);
+
+// VectorOp:15
+	vec3 n_out15p0 = n_out14p0 + n_out9p0;
+
+// Input:7
+
+// Texture:8
+	vec3 n_out8p0;
+	float n_out8p1;
+	{
+		vec4 SCREEN_TEXTURE_tex_read = texture(SCREEN_TEXTURE, n_out15p0.xy);
+		n_out8p0 = SCREEN_TEXTURE_tex_read.rgb;
+		n_out8p1 = SCREEN_TEXTURE_tex_read.a;
+	}
+
+// VectorOp:20
+	vec3 n_out20p0 = n_out11p0 + n_out8p0;
+
+// VectorOp:21
+	vec3 n_out21p0 = n_out5p0 * n_out20p0;
+
+// VectorOp:26
+	vec3 n_out26p0 = n_out25p0 + n_out21p0;
+
+// ScalarUniform:2
+	float n_out2p0 = Metallic;
+
+// ScalarUniform:3
+	float n_out3p0 = Smoothness;
+
+// ScalarUniform:4
+	float n_out4p0 = Normals;
+
+// ReadNormalMap:18
+	vec3 n_out18p0;
+	{
+		n_out18p0 = read_normalmap(n_out11p0, vec3(n_out4p0), TANGENT, BINORMAL, NORMALMAP_DEPTH);
+	}
+
+// Output:0
+	ALBEDO = n_out26p0;
+	ALPHA = n_out5p1;
+	METALLIC = n_out2p0;
+	SPECULAR = n_out3p0;
+	NORMAL = n_out18p0;
+
+}
+
+void light() {
+// Output:0
+
+}"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/start_frame = 0.0
+shader_param/end_frame = 14.0
+shader_param/FresnelPower = 2.5
+shader_param/FresnelColor = Color( 0.447059, 0.94902, 0.980392, 1 )
+shader_param/Color = Color( 0.772549, 0.937255, 0.937255, 1 )
+shader_param/Tiling = Vector3( 1, 1, 0 )
+shader_param/Offset = Vector3( 0, 0, 0 )
+shader_param/RefractionAmount = 1.0
+shader_param/Metallic = 0.134
+shader_param/Smoothness = 0.627
+shader_param/Normals = 0.77
+shader_param/offset_map = ExtResource( 2 )
+shader_param/normal_map = ExtResource( 1 )
+shader_param/Ice_Texture = ExtResource( 3 )

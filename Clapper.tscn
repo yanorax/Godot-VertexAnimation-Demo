@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://materials/clapper_shadermaterial.tres" type="Material" id=1]
+[ext_resource path="res://assets/characterMedium/export_mesh.mesh" type="ArrayMesh" id=5]
+
+[node name="Clapper" type="Spatial"]
+
+[node name="MeshInstance" type="MeshInstance" parent="."]
+material_override = ExtResource( 1 )
+mesh = ExtResource( 5 )
+material/0 = null

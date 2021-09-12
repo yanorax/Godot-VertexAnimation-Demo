@@ -1,0 +1,93 @@
+[gd_resource type="ShaderMaterial" load_steps=6 format=2]
+
+[ext_resource path="res://assets/characterMedium/normals.png" type="Texture" id=1]
+[ext_resource path="res://assets/characterMedium/tintmask.png" type="Texture" id=2]
+[ext_resource path="res://assets/characterMedium/offsets.exr" type="Texture" id=3]
+[ext_resource path="res://assets/characterMedium/albedo.png" type="Texture" id=4]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type spatial;
+render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx;
+
+uniform sampler2D offset_map;
+uniform sampler2D normal_map;
+uniform sampler2D texture_albedo: hint_albedo;
+uniform sampler2D texture_tintmask: hint_albedo;
+
+uniform float start_frame = 0;
+uniform float end_frame = 6.0;
+uniform float time_scale = 4.0;
+
+uniform float specular;
+uniform float metallic;
+uniform float roughness : hint_range(0,1);
+
+uniform vec4 tint_colour_red : hint_color;
+uniform vec4 tint_colour_green : hint_color;
+uniform vec4 tint_colour_blue : hint_color;
+
+void vertex(){
+	
+	float time_int = 1.0;
+	float time = modf(TIME * time_scale, time_int);
+	float num_frames = end_frame - start_frame;
+	float frame_offset = num_frames * INSTANCE_CUSTOM.a;
+	float current_frame = start_frame + mod((time * num_frames) + frame_offset, num_frames);
+	
+	ivec2 tex_size = textureSize(offset_map, 0);
+	float pixel_size = 1.0 / float(tex_size.y);
+	float frame_floor = clamp(floor(current_frame), start_frame, end_frame);
+	float frame_ceil = clamp(ceil(current_frame), start_frame, end_frame);
+	
+	vec2 frame_floor_uv_offset = vec2(0.0, -((frame_floor + 0.5) * pixel_size));
+	vec2 frame_ceil_uv_offset = vec2(0.0, -((frame_ceil + 0.5) * pixel_size));
+	
+	float lerp_factor = current_frame - frame_floor;
+	
+	vec3 offset_floor = texture(offset_map, UV2 + frame_floor_uv_offset).xyz;
+	vec3 offset_ceil = texture(offset_map, UV2 + frame_ceil_uv_offset).xyz;
+	vec3 offset_lerp = mix(offset_floor, offset_ceil, lerp_factor);
+	vec3 new_offset = vec3(offset_lerp.x, offset_lerp.z, offset_lerp.y);
+	
+	VERTEX += new_offset;
+	
+	vec3 normal_floor = texture(normal_map, UV2 + frame_floor_uv_offset).xyz;
+	vec3 normal_ceil = texture(normal_map, UV2 + frame_ceil_uv_offset).xyz;
+	vec3 normal_lerp = mix(normal_floor, normal_ceil, lerp_factor);
+	vec3 new_normal = vec3((normal_lerp.x * 2.0) - 1.0, (normal_lerp.z * 2.0) - 1.0, (normal_lerp.y * 2.0) - 1.0);
+	
+	NORMAL = new_normal;
+}
+
+void fragment(){
+	vec3 albedo_col = texture(texture_albedo, UV).rgb;
+	vec4 tint_mask = texture(texture_tintmask, UV).rgba;
+	
+	vec3 tint_base = vec3(1.0, 1.0, 1.0);
+	vec3 tint_red = mix(tint_base, tint_colour_red.rgb, tint_mask.r);
+	vec3 tint_green = mix(tint_base, tint_colour_green.rgb, tint_mask.g);
+	vec3 tint_blue = mix(tint_base, tint_colour_blue.rgb, tint_mask.b);
+	vec3 tint_final = mix(tint_base, tint_red * tint_green * tint_blue, tint_mask.a);
+	
+	ALBEDO = albedo_col.rgb * tint_final;
+	METALLIC = metallic;
+	ROUGHNESS = roughness;
+	SPECULAR = specular;
+}
+"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/start_frame = 0.0
+shader_param/end_frame = 6.0
+shader_param/time_scale = 4.0
+shader_param/specular = 0.2
+shader_param/metallic = null
+shader_param/roughness = 0.5
+shader_param/tint_colour_red = Color( 1, 0, 1, 1 )
+shader_param/tint_colour_green = Color( 1, 1, 0, 1 )
+shader_param/tint_colour_blue = Color( 0, 1, 1, 1 )
+shader_param/offset_map = ExtResource( 3 )
+shader_param/normal_map = ExtResource( 1 )
+shader_param/texture_albedo = ExtResource( 4 )
+shader_param/texture_tintmask = ExtResource( 2 )

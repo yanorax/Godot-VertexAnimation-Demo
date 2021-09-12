@@ -1,0 +1,94 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://assets/seats/seats.glb" type="PackedScene" id=1]
+[ext_resource path="res://materials/clappers_shadermaterial.tres" type="Material" id=2]
+[ext_resource path="res://assets/characterMedium/export_mesh.mesh" type="ArrayMesh" id=7]
+[ext_resource path="res://Clappers.gd" type="Script" id=8]
+[ext_resource path="res://clappers_env.tres" type="Environment" id=9]
+
+[sub_resource type="PrismMesh" id=1]
+left_to_right = 1.0
+size = Vector3( 22, 22, 1 )
+
+[sub_resource type="CubeMesh" id=2]
+size = Vector3( 42, 22, 1 )
+
+[sub_resource type="MultiMesh" id=3]
+color_format = 2
+transform_format = 1
+custom_data_format = 2
+instance_count = 1
+mesh = ExtResource( 7 )
+transform_array = PoolVector3Array( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
+color_array = PoolColorArray( 1, 1, 1, 1 )
+custom_data_array = PoolColorArray( 0, 0, 0, 0 )
+
+[node name="Clappers" type="Spatial"]
+script = ExtResource( 8 )
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource( 9 )
+
+[node name="DirectionalLight" type="DirectionalLight" parent="WorldEnvironment"]
+transform = Transform( 0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 30, 30 )
+shadow_enabled = true
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 12, 15 )
+current = true
+
+[node name="Rows" type="Spatial" parent="."]
+
+[node name="Row1" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0, 0 )
+
+[node name="Row2" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 2, -2.2 )
+
+[node name="Row3" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 4, -4.2 )
+
+[node name="Row4" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 6, -6.2 )
+
+[node name="Row5" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 8, -8.2 )
+
+[node name="Row6" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 10, -10.2 )
+
+[node name="Row7" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 12, -12.2 )
+
+[node name="Row8" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 14, -14.2 )
+
+[node name="Row9" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 16, -16.2 )
+
+[node name="Row10" type="Position3D" parent="Rows"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 18, -18.2 )
+
+[node name="Stand" type="Spatial" parent="."]
+
+[node name="seats" parent="Stand" instance=ExtResource( 1 )]
+transform = Transform( 20, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
+
+[node name="Left" type="MeshInstance" parent="Stand"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 20.5, 11, -9 )
+mesh = SubResource( 1 )
+material/0 = null
+
+[node name="Right" type="MeshInstance" parent="Stand"]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -20.5, 11, -9 )
+mesh = SubResource( 1 )
+material/0 = null
+
+[node name="Back" type="MeshInstance" parent="Stand"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11, -20.5 )
+mesh = SubResource( 2 )
+material/0 = null
+
+[node name="MultiMeshInstance" type="MultiMeshInstance" parent="."]
+material_override = ExtResource( 2 )
+multimesh = SubResource( 3 )
